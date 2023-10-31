@@ -1,0 +1,80 @@
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import { BrowserRouter as Router, Route, Link } from 'react-router-dom';
+import { ChakraProvider, Box, VStack, Button, Spacer } from '@chakra-ui/react';
+
+const API_BASE_URL = 'https://swapi.dev/api/people/';
+
+const CharacterList = () => {
+  const [characters, setCharacters] = useState([]);
+  const [nextPage, setNextPage] = useState(API_BASE_URL);
+
+  const fetchCharacters = async () => {
+    try {
+      const response = await axios.get(nextPage);
+      setCharacters([...characters, ...response.data.results]);
+      setNextPage(response.data.next);
+    } catch (error) {
+      console.error('Error fetching characters:', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchCharacters();
+  }, []); // Run once on component mount
+
+  return (
+    <VStack>
+      {characters.map((character) => (
+        <Box key={character.name}>
+          <Link to={`/characters/${character.name}`}>{character.name}</Link>
+        </Box>
+      ))}
+      {nextPage && <Button onClick={fetchCharacters}>Load More</Button>}
+    </VStack>
+  );
+};
+
+const CharacterDetails = ({ match }) => {
+  const [character, setCharacter] = useState(CharacterList());
+
+  useEffect(() => {
+    const fetchCharacter = async () => {
+     
+       
+        const response = await axios.get(`https://swapi.dev/api/people/${match.params.id}/`);
+        setCharacter(response.data);
+    
+    };
+
+    fetchCharacter();
+  }, [match.params.id]);
+
+  if (!character) {
+    return <div>Loading...</div>;
+  }
+
+  return (
+    <VStack>
+      <Box>Name: {character.name}</Box>
+      <Box>Height: {character.height}</Box>
+      <Box>Mass: {character.mass}</Box>
+      {/* Add more details here */}
+    </VStack>
+  );
+};
+
+const App = () => {
+  return (
+    <ChakraProvider>
+      <Router>
+        <VStack p={4} align="stretch">
+          <Route path="/" exact component={CharacterList} />
+          <Route path="/characters/:id" component={CharacterDetails} />
+        </VStack>
+      </Router>
+    </ChakraProvider>
+  );
+};
+
+export default App;
